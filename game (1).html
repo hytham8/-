@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة خمّن اللاعب</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #121212;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .box {
+            max-width: 500px;
+            margin: 30px auto;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        img {
+            width: 100%;
+            max-height: 350px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #0a0a0a;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            color: white;
+            text-align: center;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #4CAF50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: background 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .hint-btn {
+            background-color: #ff9800;
+        }
+        .hint-btn:hover {
+            background-color: #fb8c00;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #result {
+            font-size: 22px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .correct {
+            color: #4CAF50;
+        }
+        .wrong {
+            color: #f44336;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 16px;
+            background: #252525;
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        #timer {
+            color: #ffeb3b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎮 لعبة خمّن اللاعب ⚽</h1>
+    
+    <div class="top-bar">
+        <div class="badge">✨ النقاط: <span id="score">0</span></div>
+        <div class="badge">⏳ الوقت: <span id="timer">15</span> ثانية</div>
+    </div>
+
+    <div class="box" id="game-box">
+        <div id="q-num" style="margin-bottom: 15px; color: #aaa;">السؤال 1 من 10</div>
+        <img id="p-img" src="" alt="صورة اللاعب">
+        <br>
+        <div id="hint-text" style="color: #ff9800; margin-bottom: 15px; font-weight: bold; min-height: 24px;"></div>
+        <div id="input-area">
+            <input type="text" id="user-guess" placeholder="اكتب اسم اللاعب هنا..." autocomplete="off">
+            <br>
+            <button id="submit-btn" type="button">تحقق من الإجابة</button>
+            <button id="hint-btn" type="button" class="hint-btn">💡 تلميح</button>
+        </div>
+        <button id="next-btn" type="button" class="hidden">اللي بعده ❯</button>
+        <div id="result" class="hidden"></div>
+    </div>
+
+    <div id="finish" class="box hidden">
+        <h2>🎉 خلصت اللعبة!</h2>
+        <p id="final-score" style="font-size: 20px; font-weight: bold; color: #ffeb3b;"></p>
+        <button id="restart-btn" type="button">العب من جديد 🔄</button>
+    </div>
+
+    <script>
+        const data = [
+            { img: "image.png", name: "سالم الدوسري", hint: "لاعب نادي الهلال والمنتخب السعودي 🇸🇦" },
+            { img: "image_2.png", name: "كوليبالي", hint: "مدافع سنغالي محترف في دوري روشن 🧱" },
+            { img: "image_3.png", name: "إبراهيم غالب", hint: "لاعب خط وسط سعودي سابق (نجم النصر سابقاً) 🦅" },
+            { img: "image_4.png", name: "سعيد المولد", hint: "ظهير أيمن سعودي مميز 🏃‍♂️" },
+            { img: "image_5.png", name: "إدواردو", hint: "صانع ألعاب برازيلي شهير تألق مع الهلال 🎯" },
+            { img: "image_6.png", name: "كاكو", hint: "صانع ألعاب باراجواياني يلعب في الدوري السعودي 🪄" },
+            { img: "image_7.png", name: "ثيو هيرنانديز", hint: "ظهير أيسر فرنسي عالمي معروف بسرعته ⚡" },
+            { img: "image_9.png", name: "عبدالرحمن غريب", hint: "جناح سريع ومهاري في المنتخب السعودي والنصر 🌪️" },
+            { img: "image_10.png", name: "التون ألميدا", hint: "مهاجم برازيلي لعب سابقاً لنادي الهلال ⚽" },
+            { img: "image_11.png", name: "مراد باتنا", hint: "نجم مغربي متألق بتسديداته الخطيرة في الدوري السعودي 🇲🇦" }
+        ];
+
+        let index = 0, score = 0;
+        let timeLeft = 15;
+        let timerInterval = null;
+
+        const imgEl = document.getElementById("p-img");
+        const resDiv = document.getElementById("result");
+        const nextBtn = document.getElementById("next-btn");
+        const submitBtn = document.getElementById("submit-btn");
+        const hintBtn = document.getElementById("hint-btn");
+        const restartBtn = document.getElementById("restart-btn");
+        const userGuessInput = document.getElementById("user-guess");
+        const scoreSpan = document.getElementById("score");
+        const timerSpan = document.getElementById("timer");
+        const hintTextDiv = document.getElementById("hint-text");
+        const qNum = document.getElementById("q-num");
+        const gameBox = document.getElementById("game-box");
+        const finishDiv = document.getElementById("finish");
+        const finalScore = document.getElementById("final-score");
+
+        function cleanText(text) {
+            if (!text) return "";
+            return text.trim()
+                .replace(/\s+/g, ' ')
+                .toLowerCase()
+                .replace(/[أإآ]/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/^ال/, '');
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 15;
+            timerSpan.innerText = timeLeft;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerSpan.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeOutAnswer();
+                }
+            }, 1000);
+        }
+
+        function timeOutAnswer() {
+            clearInterval(timerInterval);
+            resDiv.classList.remove("hidden");
+            submitBtn.disabled = true;
+            hintBtn.disabled = true;
+            userGuessInput.disabled = true;
+            resDiv.innerText = `⏰ خلص الوقت! الإجابة الصح: ${data[index].name}`;
+            resDiv.className = "wrong";
+            nextBtn.classList.remove("hidden");
+        }
+
+        function loadQ() {
+            if (index < data.length) {
+                imgEl.src = data[index].img;
+                qNum.innerText = `السؤال ${index + 1} من ${data.length}`;
+                resDiv.classList.add("hidden");
+                nextBtn.classList.add("hidden");
+                submitBtn.disabled = false;
+                hintBtn.disabled = false;
+                userGuessInput.disabled = false;
+                userGuessInput.value = "";
+                hintTextDiv.innerText = "";
+                userGuessInput.focus();
+                startTimer();
+            } else {
+                clearInterval(timerInterval);
+                gameBox.classList.add("hidden");
+                finishDiv.classList.remove("hidden");
+                finalScore.innerText = `مجموع نقاطك الكلية: ${score} من ${data.length}`;
+            }
+        }
+
+        function showHint() {
+            hintTextDiv.innerText = `💡 تلميح: ${data[index].hint}`;
+            hintBtn.disabled = true;
+        }
+
+        function checkAnswer() {
+            clearInterval(timerInterval);
+            const rawUserGuess = userGuessInput.value.trim();
+            
+            if (rawUserGuess === "") {
+                alert("تكفى اكتب اسم أولاً!");
+                startTimer();
+                return;
+            }
+
+            const userGuess = cleanText(rawUserGuess);
+            const correctAnswer = cleanText(data[index].name);
+            const correctAnswerParts = correctAnswer.split(' ');
+
+            resDiv.classList.remove("hidden");
+            submitBtn.disabled = true;
+            hintBtn.disabled = true;
+            userGuessInput.disabled = true;
+
+            const isCorrect = userGuess === correctAnswer || correctAnswerParts.includes(userGuess);
+
+            if (isCorrect) {
+                resDiv.innerText = `✅ كفو! إجابة صحيحة.`;
+                resDiv.className = "correct";
+                score++;
+                scoreSpan.innerText = score;
+            } else {
+                resDiv.innerText = `❌ للأسف غلط! الإجابة الصح: ${data[index].name}`;
+                resDiv.className = "wrong";
+            }
+            nextBtn.classList.remove("hidden");
+        }
+
+        function nextQ() {
+            index++;
+            loadQ();
+        }
+
+        function restart() {
+            index = 0;
+            score = 0;
+            scoreSpan.innerText = score;
+            finishDiv.classList.add("hidden");
+            gameBox.classList.remove("hidden");
+            loadQ();
+        }
+
+        // ربط الأزرار والأحداث بشكل برمجي آمن
+        submitBtn.addEventListener("click", checkAnswer);
+        hintBtn.addEventListener("click", showHint);
+        nextBtn.addEventListener("click", nextQ);
+        restartBtn.addEventListener("click", restart);
+
+        userGuessInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter" && !submitBtn.disabled) {
+                checkAnswer();
+            }
+        });
+
+        // تشغيل اللعبة لأول مرة
+        loadQ();
+    </script>
+</body>
+</html>
